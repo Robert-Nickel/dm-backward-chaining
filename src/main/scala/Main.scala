@@ -1,3 +1,5 @@
+import java.util.Optional
+
 /**
  * function FOL-BC-Ask(KB, goals, θ) returns a set of substitutions inputs: KB, a knowledge base
  * goals, a list of conjuncts forming a query (θ already applied)
@@ -24,5 +26,33 @@
  *
  */
 object Main extends App {
-  // TODO lol
+  // Premises - “If Socrates is a man, Socrates is mortal.” or “Socrates is a man.”
+  val supermanAbleToStopEvil = Premise(Optional.empty, "Superman is able to stop evil.")
+  val supermanWillingToStopEvil = Premise(Optional.empty, "Superman is willing to stop evil.")
+
+  val supermanStopsEvil = Inference(
+    supermanWillingToStopEvil.isTrue && supermanAbleToStopEvil.isTrue,
+    Premise(Optional.empty, "Superman is stopping evil.")
+  )
+
+  val supermanStopsEvil = supermanAbleToStopEvil && supermanWillingToStopEvil
+  val supermanIsEvil = !supermanWillingToStopEvil
+  val superManExists = !supermanAbleToStopEvil && !supermanIsEvil
+
+  // conclusion - Superman does not exist.
+  val supermanExists = false
+
+  val supermanStopsEvil = infers()
+
+  case class Premise(truth: Optional[Boolean], description: String) {
+    def isTrue: Boolean = {
+      truth.isPresent && truth.get()
+    }
+  }
+
+  case class Inference(precondition: Boolean, inference: Premise)
+
+  def infers(preconditions: Set[Boolean]): Boolean = {
+    !preconditions.contains(false)
+  }
 }
