@@ -22,10 +22,10 @@
  */
 object Main extends App {
 
-  val stopsEvil = Premise(Some(false))
-  val able = Premise()
-  val willing = Premise()
-  val exists = Premise()
+  val stopsEvil = Premise("stops evil", Some(false))
+  val able = Premise("able")
+  val willing = Premise("willing")
+  val exists = Premise("exists")
 
   val ableThenStopsEvil = Inference(able, stopsEvil)
   val willingThenStopsEvil = Inference(willing, stopsEvil)
@@ -36,24 +36,22 @@ object Main extends App {
   println(inferPremise(able, knowledgeDatabase))
 
   /**
-   * Returns a premise that is true, if this can be infered by the knowledge database.
+   * Returns a premise that is true, if this can be inferred by the knowledge database.
    * Returns a premise that has no truth otherwise.
    */
   def inferPremise(premise: Premise, knowledgeDatabase: Set[Inference]): Premise = {
-    // TODO: this is broken somehow. Will find out.
     if (knowledgeDatabase
-      .filter(inference => inference.thanThat == premise)
-      .filter(inference => inference.ifThis.truth.getOrElse(false))
-      .exists(inference => inference.ifThis.truth.get)) {
-      Premise(Some(true))
+      .filter(inference => inference.thanThat.description.equals(premise.description))
+      .exists(inference => inference.ifThis.truth.getOrElse(false))) {
+      Premise(premise.description, Some(true))
     }
     else {
-      Premise(None)
+      Premise(premise.description, None)
     }
   }
 
 
-  case class Premise(truth: Option[Boolean] = None)
+  case class Premise(description: String, truth: Option[Boolean] = None)
 
   case class Inference(ifThis: Premise, thanThat: Premise)
 
