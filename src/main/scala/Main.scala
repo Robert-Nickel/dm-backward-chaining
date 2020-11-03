@@ -1,17 +1,4 @@
-import java.util.Optional
-
 /**
- * function FOL-BC-Ask(KB, goals, θ) returns a set of substitutions inputs: KB, a knowledge base
- * goals, a list of conjuncts forming a query (θ already applied)
- * θ, the current substitution, initially the empty substitution { } local variables: answers, a set of substitutions, initially empty
- * if goals is empty then return {θ} q ′ ← Subst(θ, First(goals))
- * for each sentence r in KB
- * where Standardize-Apart(r) = ( p1 ∧ . . . ∧ pn ⇒ q)
- * and θ′ ←Unify(q,q′) succeeds
- * new goals ← [ p1, . . . , pn|Rest(goals)]
- * answers ← FOL-BC-Ask(KB, new goals, Compose(θ , θ)) ∪ answers
- * return answers
- *
  * Wenn Superman in der Lage und willig ist, Unheil zu verhindern, dann würde er es tun. Wenn
  * Superman nicht in der Lage ist, Unheil zu verhindern, dann ist er unfähig. Wenn Superman
  * nicht willig ist, Unheil zu verhindern, dann ist er bösartig. Superman verhindert kein Unheil.
@@ -24,35 +11,50 @@ import java.util.Optional
  * Exists -> Able & Willing
  * => !Exists
  *
+ *
+ * ,---> Willing ------.
+ * |                   v
+ * Exists -> Able -> StopsEvil
+ *
+ * StopsEvil is false
+ * ____________________
+ * .: Exists is false
  */
 object Main extends App {
-  // Premises - “If Socrates is a man, Socrates is mortal.” or “Socrates is a man.”
-  val supermanAbleToStopEvil = Premise(Optional.empty, "Superman is able to stop evil.")
-  val supermanWillingToStopEvil = Premise(Optional.empty, "Superman is willing to stop evil.")
 
-  val supermanStopsEvil = Inference(
-    supermanWillingToStopEvil.isTrue && supermanAbleToStopEvil.isTrue,
-    Premise(Optional.empty, "Superman is stopping evil.")
-  )
+  val stopsEvil = Premise(Some(false))
+  val able = Premise()
+  val willing = Premise()
+  val exists = Premise()
 
-  val supermanStopsEvil = supermanAbleToStopEvil && supermanWillingToStopEvil
-  val supermanIsEvil = !supermanWillingToStopEvil
-  val superManExists = !supermanAbleToStopEvil && !supermanIsEvil
+  val ableThenStopsEvil = Inference(able, stopsEvil)
+  val willingThenStopsEvil = Inference(willing, stopsEvil)
+  val existsThenAble = Inference(exists, able)
+  val existsThenWilling = Inference(exists, willing)
+  val knowledgeDatabase = Set(ableThenStopsEvil, willingThenStopsEvil, existsThenAble, existsThenWilling)
 
-  // conclusion - Superman does not exist.
-  val supermanExists = false
+  println(inferPremise(able, knowledgeDatabase))
 
-  val supermanStopsEvil = infers()
-
-  case class Premise(truth: Optional[Boolean], description: String) {
-    def isTrue: Boolean = {
-      truth.isPresent && truth.get()
+  /**
+   * Returns a premise that is true, if this can be infered by the knowledge database.
+   * Returns a premise that has no truth otherwise.
+   */
+  def inferPremise(premise: Premise, knowledgeDatabase: Set[Inference]): Premise = {
+    // TODO: this is broken somehow. Will find out.
+    if (knowledgeDatabase
+      .filter(inference => inference.thanThat == premise)
+      .filter(inference => inference.ifThis.truth.getOrElse(false))
+      .exists(inference => inference.ifThis.truth.get)) {
+      Premise(Some(true))
+    }
+    else {
+      Premise(None)
     }
   }
 
-  case class Inference(precondition: Boolean, inference: Premise)
 
-  def infers(preconditions: Set[Boolean]): Boolean = {
-    !preconditions.contains(false)
-  }
+  case class Premise(truth: Option[Boolean] = None)
+
+  case class Inference(ifThis: Premise, thanThat: Premise)
+
 }
