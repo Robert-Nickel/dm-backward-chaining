@@ -1,20 +1,23 @@
+import scala.annotation.tailrec
+import scala.collection.mutable
+
 /**
- * Wenn Superman in der Lage und willig ist, Unheil zu verhindern, dann würde er es tun. Wenn
- * Superman nicht in der Lage ist, Unheil zu verhindern, dann ist er unfähig. Wenn Superman
- * nicht willig ist, Unheil zu verhindern, dann ist er bösartig. Superman verhindert kein Unheil.
- * Wenn Superman existiert, dann ist er weder unfähig noch bösartig. Deswegen existiert Superman nicht.
+ * If superman is able and willing to stop evil, he would do it.
+ * If superman is not able to stop evil, he is unable.
+ * If superman is not willing to stop evil, he is evil.
+ * Superman does not stop evil.
+ * If superman exists, he is neither unable not evil.
+ * Therefore, superman does not exist.
  *
  * Able & Willing -> StopsEvil
  * !Able -> Unable
  * !Willing -> Evil
  * StopsEvil = false
  * Exists -> Able & Willing
- * => !Exists
+ * --> !Exists
  *
- *
- * ,---> Willing ------.
- * |                   v
- * Exists -> Able -> StopsEvil
+ * Simplified:
+ * Exists -> Able&Willing -> StopsEvil
  *
  * StopsEvil is false
  * ____________________
@@ -22,37 +25,62 @@
  */
 object Main extends App {
 
-  val stopsEvil = Premise("stops evil", Some(false))
-  val able = Premise("able")
-  val willing = Premise("willing")
-  val exists = Premise("exists")
+  val stopsEvil = "stopsEvil"
+  val exists = "exists"
+  val ableAndWilling = "ableAndWilling"
 
-  val ableThenStopsEvil = Inference(able, stopsEvil)
-  val willingThenStopsEvil = Inference(willing, stopsEvil)
-  val existsThenAble = Inference(exists, able)
-  val existsThenWilling = Inference(exists, willing)
-  val knowledgeDatabase = Set(ableThenStopsEvil, willingThenStopsEvil, existsThenAble, existsThenWilling)
+  var premises = mutable.HashMap(
+    stopsEvil -> Premise(stopsEvil, Some(false)),
+    exists -> Premise(exists, None),
+    ableAndWilling -> Premise(ableAndWilling, None))
 
-  println(inferPremise(able, knowledgeDatabase))
+  inferBackwards(Set(
+    Inference(premises(ableAndWilling), premises(stopsEvil)),
+    Inference(premises(exists), premises(ableAndWilling))))
+  println(premises)
 
-  /**
-   * Returns a premise that is true, if this can be inferred by the knowledge database.
-   * Returns a premise that has no truth otherwise.
-   */
-  def inferPremise(premise: Premise, knowledgeDatabase: Set[Inference]): Premise = {
-    if (knowledgeDatabase
-      .filter(inference => inference.thanThat.description.equals(premise.description))
-      .exists(inference => inference.ifThis.truth.getOrElse(false))) {
-      Premise(premise.description, Some(true))
-    }
-    else {
-      Premise(premise.description, None)
+  @tailrec
+  def inferBackwards(knowledgeDatabase: Set[Inference]): Set[Inference] = {
+    println("premises: " + premises)
+    val newKnowledgeDatabase = knowledgeDatabase
+      // direct update
+      .map(inference => if (inference.thenThat.truth.isDefined) {
+        val updatedPremise = Premise(inference.ifThis.description, inference.thenThat.truth)
+        setPremise(updatedPremise.description, updatedPremise.truth)
+        inference.copy(ifThis = updatedPremise)
+      } else {
+        inference
+      })
+      // indirect update
+      .map(inference => {
+        val ifThisDescription = inference.ifThis.description
+        val thanThatDescription = inference.thenThat.description
+        inference.copy(ifThis = Premise(ifThisDescription, premises(ifThisDescription).truth),
+          thenThat = Premise(thanThatDescription, premises(thanThatDescription).truth))
+      })
+
+    // Stop Condition
+    if (premises(exists).truth.isEmpty) {
+      inferBackwards(newKnowledgeDatabase)
+    } else {
+      newKnowledgeDatabase
     }
   }
 
+  def setPremise(description: String, truth: Option[Boolean]): Unit = {
+    premises.remove(description)
+    premises.addOne(description -> Premise(description, truth))
+  }
+}
 
-  case class Premise(description: String, truth: Option[Boolean] = None)
+case class Premise(description: String, truth: Option[Boolean] = None) {
+  override def toString: String = if (truth.isDefined) {
+    s"${description} is ${truth.get}"
+  } else {
+    s"${description} is not sure"
+  }
+}
 
-  case class Inference(ifThis: Premise, thanThat: Premise)
-
+case class Inference(ifThis: Premise, thenThat: Premise) {
+  override def toString: String = s"if ${ifThis.description} then ${thenThat.description}"
 }
