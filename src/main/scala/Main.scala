@@ -37,11 +37,11 @@ object Main extends App {
   inferBackwards(Set(
     Inference(premises(ableAndWilling), premises(stopsEvil)),
     Inference(premises(exists), premises(ableAndWilling))))
-  println(premises)
+  println(premises.map(p => p._2).toList)
 
   @tailrec
   def inferBackwards(knowledgeDatabase: Set[Inference]): Set[Inference] = {
-    println("premises: " + premises)
+    println(premises.map(p => p._2).toList)
     val newKnowledgeDatabase = knowledgeDatabase
       // direct update
       .map(inference => if (inference.thenThat.truth.isDefined) {
