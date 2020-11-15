@@ -4,3 +4,4 @@
 /project
 /target
 .bsp/sbt.json
+src/main/.DS_Store

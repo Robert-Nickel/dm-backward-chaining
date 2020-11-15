@@ -1,7 +1,10 @@
 import scala.annotation.tailrec
 import scala.collection.mutable
 
+
 /**
+ * @ author: Robert Nickel
+ *
  * If superman is able and willing to stop evil, he would do it.
  * If superman is not able to stop evil, he is unable.
  * If superman is not willing to stop evil, he is evil.
